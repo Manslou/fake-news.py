@@ -1,0 +1,36 @@
+import pandas as pd
+import numpy as np
+import csv
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import ComplementNB
+from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
+
+
+train_data = pd.read_csv("dataset/train.tsv", sep="\t")
+train_title = np.array(train_data["title"])
+y = np.array(train_data["is_fake"])
+X_train, X_test, Y_train, Y_test = train_test_split(train_title, y, test_size=.1)
+cv = CountVectorizer()
+train_title1 = cv.fit_transform(np.array(X_train))
+model = ComplementNB()
+model.fit(train_title1, Y_train)
+predictionis = model.predict(cv.transform(X_test))
+counter = 0
+for i in range(len(Y_test)):
+    if Y_test[i] != predictionis[i]:
+        counter += 1
+print("Размер данных " + str(len(train_title)))
+print("Тестовый размер " + str(len(predictionis)))
+print("Ошибки " + str(counter))
+accuracy = round(f1_score(Y_test, predictionis), 3) * 100
+print("Точность " + str(accuracy) + "%")
+
+test_data = pd.read_csv("dataset/test.tsv", sep="\t")
+test_title = np.array(test_data["title"])
+data2 = cv.transform(test_title)
+prediction = model.predict(data2)
+list_tuples = list(zip(test_title, prediction))
+dframe = pd.DataFrame(list_tuples, columns=["title", "is_fake"])
+dframe.to_csv("predictions.tsv", sep=" ", index=False, quotechar=" ")
